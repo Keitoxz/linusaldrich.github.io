@@ -14,14 +14,15 @@
 
       /* Dynamic sizes controlled by JS (in-FLOW, not transforms) */
       --yes-font: 1.25rem;   /* grows */
-      --yes-padY: 1.0rem;
-      --yes-padX: 1.2rem;
+      --yes-padY: 1.1rem;
+      --yes-padX: 1.4rem;
 
-      --no-font: 1.25rem;    /* shrinks */
-      --no-padY: 1.0rem;
+      --no-font: 1.20rem;    /* shrinks */
+      --no-padY: 0.95rem;
       --no-padX: 1.2rem;
 
-      --gap: .9rem;
+      --gap: 0.9rem;
+      --radius: 18px;
     }
 
     * { box-sizing: border-box; }
@@ -34,7 +35,7 @@
         radial-gradient(1200px 1200px at 10% -10%, #fff0f6 20%, transparent 60%),
         radial-gradient(1000px 800px at 110% 10%, #ffe4f1 0%, transparent 60%),
         linear-gradient(180deg, var(--pink-1), var(--pink-2));
-      overflow: hidden;
+      overflow-x: hidden; /* allow vertical growth, prevent horizontal spill */
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
@@ -49,7 +50,6 @@
       gap: 1.125rem;
       position: relative;
       text-align: center;
-      overflow: hidden;
     }
 
     h1 {
@@ -66,31 +66,21 @@
       opacity: .95;
     }
 
-    /* Mobile-first: stack buttons vertically to avoid overlap */
+    /* 🔒 Always vertical (prevents any overlap) */
     .buttons {
       width: min(520px, 100%);
       display: flex;
       flex-direction: column;
       gap: var(--gap);
-      align-items: stretch;
+      align-items: stretch;   /* buttons fill width */
       justify-content: center;
       margin-top: .5rem;
-    }
-
-    /* On wider screens, show side-by-side but still keep flow sizing */
-    @media (min-width: 720px) {
-      .buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
-        justify-items: center;
-      }
     }
 
     .btn {
       appearance: none;
       border: 0;
-      border-radius: 18px;
+      border-radius: var(--radius);
       font-weight: 800;
       letter-spacing: .3px;
       color: #fff;
@@ -100,6 +90,10 @@
       user-select: none;
       touch-action: manipulation;
       width: 100%;
+      max-width: 100%;
+      line-height: 1.2;
+      /* enforce tappable size even when small */
+      min-height: 44px; /* Apple HIG minimum */
     }
 
     .btn:active { filter: brightness(.98); }
@@ -120,6 +114,9 @@
       /* in-flow shrink */
       font-size: var(--no-font);
       padding: var(--no-padY) var(--no-padX);
+
+      align-self: center;     /* keep centered under YES */
+      max-width: 320px;       /* keep a neat small pill as it shrinks */
     }
 
     /* When YES takes the whole screen */
@@ -272,29 +269,29 @@
     }
 
     // Baselines
-    let yesFont = 1.25, yesPadY = 1.0, yesPadX = 1.2;
-    let noFont  = 1.25, noPadY  = 1.0, noPadX  = 1.2;
+    let yesFont = 1.25, yesPadY = 1.1, yesPadX = 1.4;
+    let noFont  = 1.20, noPadY  = 0.95, noPadX  = 1.2;
 
     function onNoClick() {
       noClicks++;
       vibrate([20, 20, 20]);
 
-      // Grow YES in-flow
-      yesFont = Math.min(yesFont + (0.18 + noClicks*0.04), 6.0/16*16); // clamp via font growth
-      yesPadY = Math.min(yesPadY + 0.18, 4.5);
-      yesPadX = Math.min(yesPadX + 0.20, 5.5);
+      // Grow YES in-flow (font + padding)
+      yesFont = Math.min(yesFont + (0.22 + noClicks*0.05), 3.6); // 3.6rem cap before full-screen
+      yesPadY = Math.min(yesPadY + 0.20, 4.5);
+      yesPadX = Math.min(yesPadX + 0.24, 5.5);
       setYesSize(yesFont, yesPadY, yesPadX);
 
       // Shrink NO in-flow but keep tappable for a while
-      noFont = Math.max(noFont - 0.10, 0.70);
-      noPadY = Math.max(noPadY - 0.08, 0.50);
-      noPadX = Math.max(noPadX - 0.10, 0.70);
+      noFont = Math.max(noFont - 0.10, 0.80);
+      noPadY = Math.max(noPadY - 0.08, 0.60);
+      noPadX = Math.max(noPadX - 0.10, 0.80);
       setNoSize(noFont, noPadY, noPadX);
 
-      if (noFont <= 0.75) {
-        noBtn.style.opacity = 0.6;
+      if (noFont <= 0.9) {
+        noBtn.style.opacity = 0.8;
       }
-      if (noFont <= 0.70) {
+      if (noFont <= 0.8) {
         noBtn.style.pointerEvents = 'none';
       }
 

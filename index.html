@@ -165,24 +165,21 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    /* Make No button floatable for playful repositioning */
-    .no.floaty {
-      position: absolute;
-      width: auto;
-      max-width: 46vw;
-    }
-
     /* Desktop tweaks */
     @media (min-width: 700px) {
       .buttons { gap: 1.1rem; }
       .btn { padding: 1rem 1.4rem; }
-      .no.floaty { max-width: 320px; }
+    }
+
+    /* Optional: respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
 <body>
   <main class="wrapper" id="wrap">
-    <h1>Deniah, Will you be my Valentine? 💘</h1>
+    <h1>Will you be my Valentine? 💘</h1>
     <p class="tease" id="tease" aria-live="polite">Pretty please? 🥺💕</p>
 
     <div class="buttons" id="buttonGrid">
@@ -203,11 +200,11 @@
     const yesBtn   = document.getElementById('yesBtn');
     const noBtn    = document.getElementById('noBtn');
     const teaseEl  = document.getElementById('tease');
-    const wrap     = document.getElementById('wrap');
     const overlay  = document.getElementById('yayOverlay');
 
     let noClicks = 0;
-    let scale = 1;
+    let yesScale = 1;
+    let noScale  = 1;
 
     const teasers = [
       "Pretty please? 🥺💕",
@@ -247,47 +244,34 @@
       }
     }
 
-    function moveNoPlayfully() {
-      // Make it floaty within wrapper bounds
-      noBtn.classList.add('floaty');
-      const grid = document.getElementById('buttonGrid');
-      const gridRect = grid.getBoundingClientRect();
-      const btnRect  = noBtn.getBoundingClientRect();
-      const margin = 6;
-
-      const maxLeft = gridRect.width  - btnRect.width  - margin;
-      const maxTop  = gridRect.height - btnRect.height - margin;
-
-      const left = Math.max(margin, randomBetween(0, Math.max(0, maxLeft)));
-      const top  = Math.max(margin, randomBetween(0, Math.max(0, maxTop)));
-
-      noBtn.style.left = `${left}px`;
-      noBtn.style.top  = `${top}px`;
-    }
-
     function onNoClick() {
       noClicks++;
       vibrate([20, 20, 20]);
 
-      // Grow YES more each time
-      const bump = 0.22 + (noClicks * 0.06);
-      scale = Math.min(scale + bump, 8);
-      yesBtn.style.transform = `scale(${scale})`;
-      if (scale > 1.6) yesBtn.classList.add('big');
+      // Grow YES progressively
+      const yesBump = 0.22 + (noClicks * 0.06);
+      yesScale = Math.min(yesScale + yesBump, 8);
+      yesBtn.style.transform = `scale(${yesScale})`;
+      if (yesScale > 1.6) yesBtn.classList.add('big');
 
-      // Change tease message
+      // Shrink NO a little each time but keep it tappable until it gets tiny
+      const noBump = 0.10; // shrink step
+      noScale = Math.max(0.45, noScale - noBump);
+      noBtn.style.transform = `scale(${noScale})`;
+
+      // Fade and disable NO if it's too small
+      if (noScale <= 0.5) {
+        noBtn.style.opacity = 0.5;
+        noBtn.style.pointerEvents = 'none';
+      }
+
+      // Update tease and hearts
       teaseEl.textContent = teasers[Math.min(noClicks, teasers.length - 1)];
-
-      // Hearts each time
       spawnHearts(Math.min(12, 6 + noClicks), noBtn);
 
-      // Make the NO button dance away
-      moveNoPlayfully();
-
       // When big enough, let YES take the whole screen
-      if (scale >= 5.5) {
+      if (yesScale >= 5.5) {
         yesBtn.classList.add('full');
-        // Hide/disable NO for clarity
         noBtn.style.opacity = 0;
         noBtn.style.pointerEvents = 'none';
         teaseEl.textContent = "Okay okay, you win 😆 Tap YES! 💓";
@@ -311,16 +295,6 @@
     // Wire events
     noBtn.addEventListener('click', onNoClick);
     yesBtn.addEventListener('click', onYesClick);
-
-    // Also nudge NO on hover (desktop) to be cheeky
-    noBtn.addEventListener('mouseenter', () => {
-      if (window.matchMedia('(pointer:fine)').matches) moveNoPlayfully();
-    });
-
-    // Ensure layout stable on rotate/resize
-    window.addEventListener('resize', () => {
-      if (noBtn.classList.contains('floaty')) moveNoPlayfully();
-    });
   </script>
 </body>
 </html>

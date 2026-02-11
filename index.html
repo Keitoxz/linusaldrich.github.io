@@ -8,11 +8,20 @@
     :root{
       --pink-1:#ffe6f0;
       --pink-2:#ffd1e6;
-      --pink-3:#ff9ac2;
       --pink-4:#ff5fa5;
       --rose-1:#ff6f91;
-      --rose-2:#ff3f7f;
       --shadow: 0 10px 25px rgba(255, 105, 180, .35);
+
+      /* Dynamic sizes controlled by JS (in-FLOW, not transforms) */
+      --yes-font: 1.25rem;   /* grows */
+      --yes-padY: 1.0rem;
+      --yes-padX: 1.2rem;
+
+      --no-font: 1.25rem;    /* shrinks */
+      --no-padY: 1.0rem;
+      --no-padX: 1.2rem;
+
+      --gap: .9rem;
     }
 
     * { box-sizing: border-box; }
@@ -57,48 +66,63 @@
       opacity: .95;
     }
 
+    /* Mobile-first: stack buttons vertically to avoid overlap */
     .buttons {
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .9rem;
       width: min(520px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      align-items: stretch;
+      justify-content: center;
       margin-top: .5rem;
-      align-items: center;
-      justify-items: center;
+    }
+
+    /* On wider screens, show side-by-side but still keep flow sizing */
+    @media (min-width: 720px) {
+      .buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        justify-items: center;
+      }
     }
 
     .btn {
       appearance: none;
       border: 0;
-      padding: 1rem 1.2rem;
-      width: 100%;
       border-radius: 18px;
       font-weight: 800;
       letter-spacing: .3px;
-      font-size: clamp(1.05rem, 4.6vw, 1.35rem);
       color: #fff;
       cursor: pointer;
-      transform-origin: center;
-      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .25s ease;
+      transition: box-shadow .18s ease, filter .18s ease, opacity .25s ease;
       box-shadow: 0 8px 18px rgba(0,0,0,.08), var(--shadow);
       user-select: none;
       touch-action: manipulation;
+      width: 100%;
     }
 
-    .btn:active { transform: translateY(1px) scale(.98); }
+    .btn:active { filter: brightness(.98); }
 
     .btn.yes {
       background-image: linear-gradient(135deg, var(--rose-1), var(--pink-4));
       text-shadow: 0 1px 0 #d52d6b;
+
+      /* in-flow growth */
+      font-size: var(--yes-font);
+      padding: var(--yes-padY) var(--yes-padX);
     }
+
     .btn.no {
       background-image: linear-gradient(135deg, #ff9db5, #ff7fa1);
       text-shadow: 0 1px 0 #cc4d6f;
+
+      /* in-flow shrink */
+      font-size: var(--no-font);
+      padding: var(--no-padY) var(--no-padX);
     }
 
-    /* YES growth states */
-    .yes.big   { filter: drop-shadow(0 14px 28px rgba(255, 80, 150, 0.4)); }
+    /* When YES takes the whole screen */
     .yes.full {
       position: fixed;
       inset: 0;
@@ -106,10 +130,9 @@
       height: 100vh;
       border-radius: 0;
       z-index: 30;
-      font-size: clamp(2rem, 10vw, 6rem);
+      font-size: clamp(2rem, 10vw, 6rem) !important;
       display: grid;
       place-items: center;
-      transform: none !important;
       box-shadow: none;
       animation: breathing 2.2s ease-in-out infinite;
     }
@@ -119,7 +142,7 @@
       50%     { filter: brightness(1.08); }
     }
 
-    /* Little floating hearts each "No" */
+    /* Floating hearts */
     .particle {
       position: fixed;
       font-size: 16px;
@@ -165,12 +188,6 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    /* Desktop tweaks */
-    @media (min-width: 700px) {
-      .buttons { gap: 1.1rem; }
-      .btn { padding: 1rem 1.4rem; }
-    }
-
     /* Optional: respect reduced motion */
     @media (prefers-reduced-motion: reduce) {
       * { animation: none !important; transition: none !important; }
@@ -203,8 +220,6 @@
     const overlay  = document.getElementById('yayOverlay');
 
     let noClicks = 0;
-    let yesScale = 1;
-    let noScale  = 1;
 
     const teasers = [
       "Pretty please? 🥺💕",
@@ -244,24 +259,42 @@
       }
     }
 
+    // Helpers to update CSS variables for in-flow sizing
+    function setYesSize(font, padY, padX) {
+      document.documentElement.style.setProperty('--yes-font', font + 'rem');
+      document.documentElement.style.setProperty('--yes-padY', padY + 'rem');
+      document.documentElement.style.setProperty('--yes-padX', padX + 'rem');
+    }
+    function setNoSize(font, padY, padX) {
+      document.documentElement.style.setProperty('--no-font', font + 'rem');
+      document.documentElement.style.setProperty('--no-padY', padY + 'rem');
+      document.documentElement.style.setProperty('--no-padX', padX + 'rem');
+    }
+
+    // Baselines
+    let yesFont = 1.25, yesPadY = 1.0, yesPadX = 1.2;
+    let noFont  = 1.25, noPadY  = 1.0, noPadX  = 1.2;
+
     function onNoClick() {
       noClicks++;
       vibrate([20, 20, 20]);
 
-      // Grow YES progressively
-      const yesBump = 0.22 + (noClicks * 0.06);
-      yesScale = Math.min(yesScale + yesBump, 8);
-      yesBtn.style.transform = `scale(${yesScale})`;
-      if (yesScale > 1.6) yesBtn.classList.add('big');
+      // Grow YES in-flow
+      yesFont = Math.min(yesFont + (0.18 + noClicks*0.04), 6.0/16*16); // clamp via font growth
+      yesPadY = Math.min(yesPadY + 0.18, 4.5);
+      yesPadX = Math.min(yesPadX + 0.20, 5.5);
+      setYesSize(yesFont, yesPadY, yesPadX);
 
-      // Shrink NO a little each time but keep it tappable until it gets tiny
-      const noBump = 0.10; // shrink step
-      noScale = Math.max(0.45, noScale - noBump);
-      noBtn.style.transform = `scale(${noScale})`;
+      // Shrink NO in-flow but keep tappable for a while
+      noFont = Math.max(noFont - 0.10, 0.70);
+      noPadY = Math.max(noPadY - 0.08, 0.50);
+      noPadX = Math.max(noPadX - 0.10, 0.70);
+      setNoSize(noFont, noPadY, noPadX);
 
-      // Fade and disable NO if it's too small
-      if (noScale <= 0.5) {
-        noBtn.style.opacity = 0.5;
+      if (noFont <= 0.75) {
+        noBtn.style.opacity = 0.6;
+      }
+      if (noFont <= 0.70) {
         noBtn.style.pointerEvents = 'none';
       }
 
@@ -269,8 +302,9 @@
       teaseEl.textContent = teasers[Math.min(noClicks, teasers.length - 1)];
       spawnHearts(Math.min(12, 6 + noClicks), noBtn);
 
-      // When big enough, let YES take the whole screen
-      if (yesScale >= 5.5) {
+      // If YES is visually massive, switch to full-screen button
+      const yesRect = yesBtn.getBoundingClientRect();
+      if (yesRect.height >= window.innerHeight * 0.38 || yesRect.width >= window.innerWidth * 0.9) {
         yesBtn.classList.add('full');
         noBtn.style.opacity = 0;
         noBtn.style.pointerEvents = 'none';
@@ -295,6 +329,10 @@
     // Wire events
     noBtn.addEventListener('click', onNoClick);
     yesBtn.addEventListener('click', onYesClick);
+
+    // Initialize CSS vars explicitly
+    setYesSize(yesFont, yesPadY, yesPadX);
+    setNoSize(noFont, noPadY, noPadX);
   </script>
 </body>
 </html>

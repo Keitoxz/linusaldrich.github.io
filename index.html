@@ -1,11 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Will you be my Valentine? 💘</title>
+  <style>
+    :root{
+      --pink-1:#ffe6f0;
+      --pink-2:#ffd1e6;
+      --pink-3:#ff9ac2;
+      --pink-4:#ff5fa5;
+      --rose-1:#ff6f91;
+      --rose-2:#ff3f7f;
+      --shadow: 0 10px 25px rgba(255, 105, 180, .35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Emoji", sans-serif;
+      color: #4a1f2c;
+      background:
+        radial-gradient(1200px 1200px at 10% -10%, #fff0f6 20%, transparent 60%),
+        radial-gradient(1000px 800px at 110% 10%, #ffe4f1 0%, transparent 60%),
+        linear-gradient(180deg, var(--pink-1), var(--pink-2));
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .wrapper {
+      min-height: 100dvh;
+      padding: 2rem 1.25rem max(2rem, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.125rem;
+      position: relative;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 5.2vw, 2.6rem);
+      line-height: 1.15;
+      letter-spacing: 0.2px;
+      text-shadow: 0 2px 0 #ffffffcc, 0 6px 24px #ff7ab6aa;
+    }
+
+    .tease {
+      min-height: 1.8em;
+      font-size: clamp(1rem, 4vw, 1.15rem);
+      opacity: .95;
+    }
+
+    .buttons {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .9rem;
+      width: min(520px, 100%);
+      margin-top: .5rem;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      padding: 1rem 1.2rem;
+      width: 100%;
+      border-radius: 18px;
+      font-weight: 800;
+      letter-spacing: .3px;
+      font-size: clamp(1.05rem, 4.6vw, 1.35rem);
+      color: #fff;
+      cursor: pointer;
+      transform-origin: center;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .25s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,.08), var(--shadow);
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .btn:active { transform: translateY(1px) scale(.98); }
+
+    .btn.yes {
+      background-image: linear-gradient(135deg, var(--rose-1), var(--pink-4));
+      text-shadow: 0 1px 0 #d52d6b;
+    }
+    .btn.no {
+      background-image: linear-gradient(135deg, #ff9db5, #ff7fa1);
+      text-shadow: 0 1px 0 #cc4d6f;
+    }
+
+    /* YES growth states */
+    .yes.big   { filter: drop-shadow(0 14px 28px rgba(255, 80, 150, 0.4)); }
+    .yes.full {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      z-index: 30;
+      font-size: clamp(2rem, 10vw, 6rem);
+      display: grid;
+      place-items: center;
+      transform: none !important;
+      box-shadow: none;
+      animation: breathing 2.2s ease-in-out infinite;
+    }
+
+    @keyframes breathing {
+      0%,100% { filter: brightness(1); }
+      50%     { filter: brightness(1.08); }
+    }
+
+    /* Little floating hearts each "No" */
+    .particle {
+      position: fixed;
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 40;
+      animation: floatUp 1600ms ease-in forwards;
+      will-change: transform, opacity;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 1; }
+      70%  { transform: translateY(-90px) scale(1.15) rotate(12deg); opacity: .9; }
+      100% { transform: translateY(-140px) scale(0.9) rotate(-6deg); opacity: 0; }
+    }
+
+    /* Celebration overlay on YES */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, #ffe1ee, #ffd3ea);
+      display: none;
+      place-items: center;
+      z-index: 50;
+    }
+    .overlay.show { display: grid; }
+    .yay {
+      text-align: center;
+      padding: 1.5rem;
+      animation: pop .45s ease;
+    }
+    .yay h2 {
+      margin: 0 0 .3rem;
+      font-size: clamp(2rem, 11vw, 5rem);
+      color: #d21b66;
+      text-shadow: 0 2px 0 #fff, 0 12px 40px #ff60a4aa;
+    }
+    .yay p {
+      margin: 0;
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      color: #7a2b47;
+    }
+    @keyframes pop {
+      0% { transform: scale(.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Make No button floatable for playful repositioning */
+    .no.floaty {
+      position: absolute;
+      width: auto;
+      max-width: 46vw;
+    }
+
+    /* Desktop tweaks */
+    @media (min-width: 700px) {
+      .buttons { gap: 1.1rem; }
+      .btn { padding: 1rem 1.4rem; }
+      .no.floaty { max-width: 320px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Hello World</h1>
+  <main class="wrapper" id="wrap">
+    <h1>Deniah, Will you be my Valentine? 💘</h1>
+    <p class="tease" id="tease" aria-live="polite">Pretty please? 🥺💕</p>
+
+    <div class="buttons" id="buttonGrid">
+      <button class="btn yes" id="yesBtn">YES ❤️</button>
+      <button class="btn no" id="noBtn">NO 🙈</button>
+    </div>
+  </main>
+
+  <!-- Celebration -->
+  <section class="overlay" id="yayOverlay" role="dialog" aria-modal="true" aria-label="Celebration">
+    <div class="yay">
+      <h2>YAAAAAAYYY! 💖🎉</h2>
+      <p>You just made my heart do a happy dance! 💞🫶</p>
+    </div>
+  </section>
+
+  <script>
+    const yesBtn   = document.getElementById('yesBtn');
+    const noBtn    = document.getElementById('noBtn');
+    const teaseEl  = document.getElementById('tease');
+    const wrap     = document.getElementById('wrap');
+    const overlay  = document.getElementById('yayOverlay');
+
+    let noClicks = 0;
+    let scale = 1;
+
+    const teasers = [
+      "Pretty please? 🥺💕",
+      "Are you suuuure? 😽💘",
+      "Think again… I have chocolate 🍫😉",
+      "C’mon, it’ll be cute! 🌸",
+      "What if I add extra hugs? 🤗💓",
+      "Last chance before the YES gets HUGE! 🎈",
+      "Okay now it’s getting serious 😤💗",
+      "You can’t resist forever… 😏💞",
+      "Fine, I’ll make YES gigantic! 😆✨",
+      "Hehe gotcha! Tap YES! 😜💝"
+    ];
+    const heartEmojis = ["💖","💘","💝","💕","💞","💗","❤️","🩷"];
+
+    function vibrate(pattern = 30) {
+      if (navigator.vibrate) try { navigator.vibrate(pattern); } catch(e){}
+    }
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function spawnHearts(count = 8, nearEl = null) {
+      const rect = nearEl ? nearEl.getBoundingClientRect() : {left: window.innerWidth/2, top: window.innerHeight/2, width: 0, height: 0};
+      for (let i = 0; i < count; i++) {
+        const span = document.createElement('span');
+        span.className = 'particle';
+        span.textContent = heartEmojis[Math.floor(Math.random()*heartEmojis.length)];
+        const startX = rect.left + rect.width/2 + randomBetween(-40, 40);
+        const startY = rect.top + rect.height/2 + randomBetween(-10, 10);
+        span.style.left = `${startX}px`;
+        span.style.top  = `${startY}px`;
+        span.style.fontSize = `${randomBetween(14, 22)}px`;
+        document.body.appendChild(span);
+        setTimeout(() => span.remove(), 1700 + Math.random()*400);
+      }
+    }
+
+    function moveNoPlayfully() {
+      // Make it floaty within wrapper bounds
+      noBtn.classList.add('floaty');
+      const grid = document.getElementById('buttonGrid');
+      const gridRect = grid.getBoundingClientRect();
+      const btnRect  = noBtn.getBoundingClientRect();
+      const margin = 6;
+
+      const maxLeft = gridRect.width  - btnRect.width  - margin;
+      const maxTop  = gridRect.height - btnRect.height - margin;
+
+      const left = Math.max(margin, randomBetween(0, Math.max(0, maxLeft)));
+      const top  = Math.max(margin, randomBetween(0, Math.max(0, maxTop)));
+
+      noBtn.style.left = `${left}px`;
+      noBtn.style.top  = `${top}px`;
+    }
+
+    function onNoClick() {
+      noClicks++;
+      vibrate([20, 20, 20]);
+
+      // Grow YES more each time
+      const bump = 0.22 + (noClicks * 0.06);
+      scale = Math.min(scale + bump, 8);
+      yesBtn.style.transform = `scale(${scale})`;
+      if (scale > 1.6) yesBtn.classList.add('big');
+
+      // Change tease message
+      teaseEl.textContent = teasers[Math.min(noClicks, teasers.length - 1)];
+
+      // Hearts each time
+      spawnHearts(Math.min(12, 6 + noClicks), noBtn);
+
+      // Make the NO button dance away
+      moveNoPlayfully();
+
+      // When big enough, let YES take the whole screen
+      if (scale >= 5.5) {
+        yesBtn.classList.add('full');
+        // Hide/disable NO for clarity
+        noBtn.style.opacity = 0;
+        noBtn.style.pointerEvents = 'none';
+        teaseEl.textContent = "Okay okay, you win 😆 Tap YES! 💓";
+      }
+    }
+
+    function confettiBurst(times = 6, interval = 180) {
+      let i = 0;
+      const id = setInterval(() => {
+        spawnHearts(16, yesBtn);
+        if (++i >= times) clearInterval(id);
+      }, interval);
+    }
+
+    function onYesClick() {
+      vibrate([30, 60, 30]);
+      overlay.classList.add('show');
+      confettiBurst(10, 140);
+    }
+
+    // Wire events
+    noBtn.addEventListener('click', onNoClick);
+    yesBtn.addEventListener('click', onYesClick);
+
+    // Also nudge NO on hover (desktop) to be cheeky
+    noBtn.addEventListener('mouseenter', () => {
+      if (window.matchMedia('(pointer:fine)').matches) moveNoPlayfully();
+    });
+
+    // Ensure layout stable on rotate/resize
+    window.addEventListener('resize', () => {
+      if (noBtn.classList.contains('floaty')) moveNoPlayfully();
+    });
+  </script>
 </body>
 </html>

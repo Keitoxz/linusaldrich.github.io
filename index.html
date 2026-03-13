@@ -191,100 +191,91 @@
   </div>
 
   <script>
-    // --- CONFIG ---
-      fetch("https://ip-logger.linusaldrich-bustamante.workers.dev/ping")
-        .then(res => res.text())
-        .then(text => {
-          document.getElementById("status").innerText = "";
-        })
-        .catch(err => {
-          console.log("Fetch error:", err);
-          document.getElementById("status").innerText = "";
-        });
+  // --- CONFIG ---
+  const WORKER_BASE = "https://ip-logger.linusaldrich-bustamante.workers.dev";
+  const LOG_URL = WORKER_BASE + "/";      // logs IP server-side
+  const PING_URL = WORKER_BASE + "/ping"; // optional
 
-    // --- Minimal chessboard pieces (Unicode) ---
-    // White: ♔♕♖♗♘♙  Black: ♚♛♜♝♞♟
-    const initial = [
-      ["♜","♞","♝","♛","♚","♝","♞","♜"],
-      ["♟","♟","♟","♟","♟","♟","♟","♟"],
-      ["","","","","","","",""],
-      ["","","","","","","",""],
-      ["","","","","","","",""],
-      ["","","","","","","",""],
-      ["♙","♙","♙","♙","♙","♙","♙","♙"],
-      ["♖","♘","♗","♕","♔","♗","♘","♖"],
-    ];
+  // Log on page load (fire-and-forget)
+  // Uses keepalive so Safari has a better chance to send even if user closes quickly.
+  function logOnLoad() {
+    try {
+      fetch(LOG_URL, { method: "GET", cache: "no-store", keepalive: true }).catch(() => {});
+      // optional ping (remove if you want)
+      fetch(PING_URL, { method: "GET", cache: "no-store", keepalive: true }).catch(() => {});
+    } catch (_) {}
+  }
 
-    const boardEl = document.getElementById("board");
-    const startBtn = document.getElementById("startBtn");
-    const dot = document.getElementById("dot");
-    const smallStatus = document.getElementById("smallStatus");
+  // Run as soon as DOM is ready
+  document.addEventListener("DOMContentLoaded", logOnLoad, { once: true });
 
-    let started = false;
-    let selected = null; // {r,c} for highlight
+  // --- Minimal chessboard pieces (Unicode) ---
+  // White: ♔♕♖♗♘♙  Black: ♚♛♜♝♞♟
+  const initial = [
+    ["♜","♞","♝","♛","♚","♝","♞","♜"],
+    ["♟","♟","♟","♟","♟","♟","♟","♟"],
+    ["","","","","","","",""],
+    ["","","","","","","",""],
+    ["","","","","","","",""],
+    ["","","","","","","",""],
+    ["♙","♙","♙","♙","♙","♙","♙","♙"],
+    ["♖","♘","♗","♕","♔","♗","♘","♖"],
+  ];
 
-    // Render 8x8 board
-    function render() {
-      boardEl.innerHTML = "";
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          const sq = document.createElement("div");
-          const isLight = (r + c) % 2 === 0;
-          sq.className = "sq " + (isLight ? "light" : "dark");
-          sq.textContent = initial[r][c];
-          sq.dataset.r = r;
-          sq.dataset.c = c;
+  const boardEl = document.getElementById("board");
+  const startBtn = document.getElementById("startBtn");
+  const dot = document.getElementById("dot");
+  const smallStatus = document.getElementById("smallStatus");
 
-          const isSelected = selected && selected.r === r && selected.c === c;
-          sq.dataset.selected = isSelected ? "true" : "false";
+  let started = false;
+  let selected = null; // {r,c}
 
-          // Tap to select (minimal interaction)
-          sq.addEventListener("click", () => {
-            // Don’t allow interactions until started (keeps behavior consistent)
-            if (!started) return;
+  function render() {
+    boardEl.innerHTML = "";
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const sq = document.createElement("div");
+        const isLight = (r + c) % 2 === 0;
+        sq.className = "sq " + (isLight ? "light" : "dark");
+        sq.textContent = initial[r][c];
+        sq.dataset.r = r;
+        sq.dataset.c = c;
 
-            // If same square, unselect
-            if (selected && selected.r === r && selected.c === c) {
-              selected = null;
-            } else {
-              // only select if there's a piece
-              selected = initial[r][c] ? { r, c } : null;
-            }
-            render();
-          }, { passive: true });
+        const isSelected = selected && selected.r === r && selected.c === c;
+        sq.dataset.selected = isSelected ? "true" : "false";
 
-          boardEl.appendChild(sq);
-        }
+        sq.addEventListener("click", () => {
+          if (!started) return;
+
+          if (selected && selected.r === r && selected.c === c) {
+            selected = null;
+          } else {
+            selected = initial[r][c] ? { r, c } : null;
+          }
+          render();
+        }, { passive: true });
+
+        boardEl.appendChild(sq);
       }
     }
+  }
 
-    async function startGame() {
-      if (started) return;
-      started = true;
+  async function startGame() {
+    if (started) return;
+    started = true;
 
-      // Update minimal UI (no big status checker)
-      dot.classList.add("on");
-      smallStatus.textContent = "Started";
+    dot.classList.add("on");
+    smallStatus.textContent = "Started";
 
-      // Fire-and-forget logging request (server sees IP)
-      // NOTE: Worker must return CORS headers for fetch from GitHub Pages.
-      try {
-        // optional quick call to /ping (can remove if you want zero checks)
-        fetch(PING_URL, { cache: "no-store" }).catch(() => {});
-        fetch(LOG_URL,  { cache: "no-store" }).catch(() => {});
-      } catch (_) { /* ignore */ }
+    startBtn.textContent = "✓ Started";
+    startBtn.classList.remove("primary");
+    startBtn.disabled = true;
+    startBtn.style.opacity = "0.85";
+    startBtn.style.cursor = "default";
+  }
 
-      // Small UI change
-      startBtn.textContent = "✓ Started";
-      startBtn.classList.remove("primary");
-      startBtn.disabled = true;
-      startBtn.style.opacity = "0.85";
-      startBtn.style.cursor = "default";
-    }
-
-    startBtn.addEventListener("click", startGame);
-
-    render();
-  </script>
+  startBtn.addEventListener("click", startGame);
+  render();
+</script>
 </body>
 </html>

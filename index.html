@@ -192,9 +192,15 @@
 
   <script>
     // --- CONFIG ---
-    const WORKER_BASE = "https://ip-logger.linusaldrich-bustamante.workers.dev";
-    const LOG_URL = WORKER_BASE + "/";     // logs IP server-side
-    const PING_URL = WORKER_BASE + "/ping"; // optional health check (safe)
+      fetch("https://ip-logger.linusaldrich-bustamante.workers.dev/ping")
+        .then(res => res.text())
+        .then(text => {
+          document.getElementById("status").innerText = "";
+        })
+        .catch(err => {
+          console.log("Fetch error:", err);
+          document.getElementById("status").innerText = "";
+        });
 
     // --- Minimal chessboard pieces (Unicode) ---
     // White: ♔♕♖♗♘♙  Black: ♚♛♜♝♞♟
